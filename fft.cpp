@@ -22,14 +22,24 @@ isope::fft::fftw::~fftw() {
         delete[] backward_data_;
 }
 
-void isope::fft::fftw::execute_forward(const isope::fft::normalization norm) const {
+const isope::fft::basic_fft & isope::fft::fftw::execute_forward() const {
     fftw_execute(plan_forward_);
-    normalize(backward_data_, norm);
+    return *this;
 }
 
-void isope::fft::fftw::execute_backward(const isope::fft::normalization norm) const {
+const isope::fft::basic_fft & isope::fft::fftw::execute_backward() const {
     fftw_execute(plan_backward_);
-    normalize(forward_data_, norm);
+    return *this;
+}
+
+const isope::fft::basic_fft & isope::fft::fftw::normalize_forward() const {
+    multiply_by(backward_data_, std::sqrt(dsize_));
+    return *this;
+}
+
+const isope::fft::basic_fft & isope::fft::fftw::normalize_backward() const {
+    multiply_by(forward_data_, dsize_);
+    return *this;
 }
 
 isope::fft::basic_fft::complex *isope::fft::fftw::forward_data() const { return forward_data_; }
@@ -38,9 +48,7 @@ isope::fft::basic_fft::complex *isope::fft::fftw::backward_data() const { return
 
 int isope::fft::fftw::size() const { return size_; }
 
-void isope::fft::fftw::normalize(isope::fft::basic_fft::complex *data, const isope::fft::normalization norm) const {
-    if (norm == normalization::none) return;
-    const double c = norm == normalization::twice ? dsize_ : std::sqrt(dsize_);
+void isope::fft::fftw::multiply_by(complex* data, const double value) const {
     for (auto i = 0; i < size(); ++i)
-        *(data++) /= c;
+        *(data++) /= value;
 }

@@ -5,9 +5,7 @@
 
 namespace isope {
 
-    namespace fft {
-
-        enum class normalization { none, once, twice };
+    namespace fft { ;
 
         class basic_fft {
 
@@ -15,8 +13,10 @@ namespace isope {
 
             typedef std::complex<double> complex;
 
-            virtual void execute_forward(normalization) const = 0;
-            virtual void execute_backward(normalization) const = 0;
+            virtual const basic_fft& execute_forward() const = 0;
+            virtual const basic_fft& execute_backward() const = 0;
+            virtual const basic_fft& normalize_forward() const = 0;
+            virtual const basic_fft& normalize_backward() const = 0;
             virtual complex* forward_data() const = 0;
             virtual complex* backward_data() const = 0;
             virtual int size() const = 0;
@@ -35,8 +35,10 @@ namespace isope {
             explicit fftw(int size, bool same_data = false);
             ~fftw();
 
-            void execute_forward(normalization norm) const override;
-            void execute_backward(normalization norm) const override;
+            const basic_fft& execute_forward() const override;
+            const basic_fft& execute_backward() const override;
+            const basic_fft& normalize_forward() const override;
+            const basic_fft& normalize_backward() const override;
             complex* forward_data() const override;
             complex* backward_data() const override;
             int size() const override;
@@ -49,7 +51,7 @@ namespace isope {
             complex* forward_data_ = nullptr, *backward_data_ = nullptr;
             fftw_plan plan_forward_ = fftw_plan(), plan_backward_ = fftw_plan();
 
-            void normalize(complex* data, normalization norm) const;
+            void multiply_by(complex* data, double value) const;
 
         };
 
