@@ -5,7 +5,7 @@
 
 namespace isope {
 
-    namespace fft { ;
+    namespace fft {
 
         class basic_fft {
 

@@ -1,6 +1,6 @@
 #include <iostream>
+#include <vector>
+#include "model.hpp"
 
-int main() {
-    std::cout << "Hello, World!" << std::endl;
-    return 0;
+int main() { 
 }
