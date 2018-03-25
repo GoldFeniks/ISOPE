@@ -45,13 +45,13 @@ const isope::fft::basic_fft & isope::fft::fftw::normalize_backward() const {
     return *this;
 }
 
-isope::fft::basic_fft::complex* isope::fft::fftw::forward_data() const { return forward_data_; }
+const isope::fft::basic_fft::complex* isope::fft::fftw::forward_data() const { return forward_data_; }
 
-isope::fft::basic_fft::complex* isope::fft::fftw::backward_data() const { return backward_data_; }
+const isope::fft::basic_fft::complex* isope::fft::fftw::backward_data() const { return backward_data_; }
 
-isope::fft::basic_fft::complex* isope::fft::fftw::forward_data_end() const { return forward_data_end_; }
+const isope::fft::basic_fft::complex* isope::fft::fftw::forward_data_end() const { return forward_data_end_; }
 
-isope::fft::basic_fft::complex* isope::fft::fftw::backward_data_end() const { return backward_data_end_; }
+const isope::fft::basic_fft::complex* isope::fft::fftw::backward_data_end() const { return backward_data_end_; }
 
 int isope::fft::fftw::size() const { return size_; }
 
@@ -69,3 +69,15 @@ isope::fft::fftw& isope::fft::fftw::operator=(isope::fft::fftw &&other) noexcept
     plan_backward_ = other.plan_backward_;
     return *this;
 }
+
+isope::fft::basic_fft::complex* isope::fft::fftw::forward_data() { return forward_data_; }
+
+isope::fft::basic_fft::complex* isope::fft::fftw::backward_data() { return backward_data_; }
+
+isope::fft::basic_fft::complex& isope::fft::fftw::forward_data(const size_t &index) { return forward_data_[index]; }
+
+const isope::fft::basic_fft::complex& isope::fft::fftw::forward_data(const size_t& index) const { return forward_data_[index]; }
+
+isope::fft::basic_fft::complex& isope::fft::fftw::backward_data(const size_t& index) { return backward_data_[index]; }
+
+const isope::fft::basic_fft::complex& isope::fft::fftw::backward_data(const size_t& index) const { return backward_data_[index]; }

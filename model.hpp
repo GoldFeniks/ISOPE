@@ -24,15 +24,17 @@ namespace isope {
     private:
 
         const complex a_, b_;
-        const double k0_, sigma_, eps_, v_;
+        const double k0_, sigma_, eps_, v_, dx_, dz_;
         const rvector1d_t xs_, zs_, k_;
-        cvector1d_t expA_, nlfacA_, nlfacAp_;
+        cvector1d_t expA_, nlfacA_, nlfacAp_, cA;
 
         const double dt_ = 0.5e-8;
 
         static rvector1d_t vector_k_(double l, size_t n);
 
-        void non_linear_coeff(const cvector2d_t& values, size_t n, complex* data) const;
+        static void non_linear_coeff(const cvector2d_t& values, size_t n, complex* data);
+        void calculate(const cvector2d_t& values, const complex* nl, const cvector2d_t& nlp,
+                       const cvector1d_t& buff, size_t n, complex* data) const;
 
     };
 

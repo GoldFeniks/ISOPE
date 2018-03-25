@@ -18,8 +18,14 @@ namespace isope {
             virtual const basic_fft& execute_backward() const = 0;
             virtual const basic_fft& normalize_forward() const = 0;
             virtual const basic_fft& normalize_backward() const = 0;
-            virtual complex* forward_data() const = 0;
-            virtual complex* backward_data() const = 0;
+            virtual complex* forward_data() = 0;
+            virtual const complex* forward_data() const = 0;
+            virtual complex& forward_data(const size_t&) = 0;
+            virtual const complex& forward_data(const size_t&) const = 0;
+            virtual complex* backward_data() = 0;
+            virtual const complex* backward_data() const = 0;
+            virtual complex& backward_data(const size_t&) = 0;
+            virtual const complex& backward_data(const size_t&) const = 0;
             virtual int size() const = 0;
 
         };
@@ -42,10 +48,16 @@ namespace isope {
             const basic_fft& execute_backward() const override;
             const basic_fft& normalize_forward() const override;
             const basic_fft& normalize_backward() const override;
-            complex* forward_data() const override;
-            complex* backward_data() const override;
-            complex* forward_data_end() const;
-            complex* backward_data_end() const;
+            complex* forward_data() override;
+            const complex* forward_data() const override;
+            complex& forward_data(const size_t& index) override;
+            const complex& forward_data(const size_t& index) const override;
+            complex* backward_data() override;
+            const complex* backward_data() const override;
+            complex& backward_data(const size_t& index) override;
+            const complex& backward_data(const size_t& index) const override;
+            const complex* forward_data_end() const;
+            const complex* backward_data_end() const;
             int size() const override;
 
         private:
