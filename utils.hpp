@@ -15,6 +15,23 @@ namespace isope {
             return result;
         }
 
+        template<typename It1, typename It2, typename T>
+        void multiply_by(It1 from, It2 to, const T& value) {
+            while (from != to) {
+                *from *= value;
+                ++from;
+            }
+        };
+
+        template<typename It1, typename It2, typename T>
+        void divide_by(It1 from, It2 to, const T& value) {
+            while (from != to) {
+                *from /= value;
+                ++from;
+            }
+        };
+
+
     }
 
 }
