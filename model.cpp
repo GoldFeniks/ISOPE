@@ -76,7 +76,7 @@ isope::model::cvector2d_t isope::model::solve(std::function<complex(double, doub
         if (_ % 40000 == 0)
             std::cout << _ << std::endl;
         if (_ % m == 0) {
-            for (size_t i = 2; i < n; ++i)
+            for (size_t i = 2; i <= n; ++i)
                 for (size_t j = 0; j < xs_.size(); ++j)
                     fft.forward_data(j) += as[n - i][j];
             for (size_t i = 0; i < xs_.size(); ++i)
@@ -88,32 +88,31 @@ isope::model::cvector2d_t isope::model::solve(std::function<complex(double, doub
 }
 
 void isope::model::non_linear_coeff(const cvector2d_t& values, const size_t n, complex* data) {
-    switch(n) {
-        case 0:
-            for (size_t i = 0; i < values[0].size(); ++i)
-                data[i] = values[0][i] * std::pow(std::abs(values[0][i]), 2);
-            return;
-        case 1:
-            for (size_t i = 0; i < values[0].size(); ++i)
-                data[i] = 2 * std::pow(std::abs(values[0][i]), 2) * values[1][i] + std::pow(values[0][i], 2) * std::conj(values[1][i]);
-            return;
-        default: return;
-    }
+    for (size_t i = 0; i <= n; ++i)
+        for (size_t j = 0; j <= n - i; ++j)
+            for (size_t k = 0; k < values[0].size(); ++k)
+                data[k] = values[i][k] * values[j][k] * std::conj(values[n - i - j][k]);
+//    switch(n) {
+//        case 0:
+//            for (size_t i = 0; i < values[0].size(); ++i)
+//                data[i] = values[0][i] * std::pow(std::abs(values[0][i]), 2);
+//            return;
+//        case 1:
+//            for (size_t i = 0; i < values[0].size(); ++i)
+//                data[i] = 2 * std::pow(std::abs(values[0][i]), 2) * values[1][i] + std::pow(values[0][i], 2) * std::conj(values[1][i]);
+//            return;
+//        default: return;
+//    }
 }
 
 void isope::model::calculate(const cvector2d_t& values, const complex* nl, const cvector2d_t& nlp,
                              const cvector1d_t& buff, const size_t n, complex* data) const {
-    switch(n) {
-        case 0:
-            for (size_t i = 0; i < values[0].size(); ++i)
-                data[i] = values[0][i] * expA_[i] + nlfacA_[i] * nl[i] + nlfacAp_[i] * nlp[0][i];
-            return;
-        case 1:
-            for (size_t i = 0; i < values[0].size(); ++i)
-                data[i] = values[1][i] * expA_[i] + dz_ / 2. * (nl[i] + expA_[i] * nlp[1][i]) + a_ * buff[i];
-            return;
-        default: return;
-    }
+    if (n == 0)
+        for (size_t i = 0; i < values[0].size(); ++i)
+            data[i] = values[0][i] * expA_[i] + nlfacA_[i] * nl[i] + nlfacAp_[i] * nlp[0][i];
+    else
+        for (size_t i = 0; i < values[0].size(); ++i)
+            data[i] = values[n][i] * expA_[i] + dz_ / 2. * (nl[i] + expA_[i] * nlp[n][i]) + a_ * buff[i];
 }
 
 isope::model::rvector1d_t isope::model::vector_k_(const double l, const size_t n) {
