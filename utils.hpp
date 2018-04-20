@@ -31,6 +31,11 @@ namespace isope {
             }
         };
 
+        template<typename T>
+        constexpr bool has_flag(const T& a, const T& b) {
+            return a & b;
+        }
+
     }
 
 }

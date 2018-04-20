@@ -35,7 +35,7 @@ void isope::model::diff(const cvector1d_t& ash0, const cvector1d_t& ash1, cvecto
 
 void isope::model::store(cvector2d_t& result, std::vector<size_t>& indexes, const cvector1d_t& values,
                          const size_t index, const size_t z_index, const bool do_store) const {
-    if (!do_store | index != 2) return;
+    if (!do_store) return;
     auto& ind = indexes[index];
     for (size_t i = 0; i < values.size(); ++i)
         result[ind][i] += values[i] * std::exp(1i * k0_ * zs_[z_index]);
@@ -67,7 +67,7 @@ isope::model::new_solve(std::function<complex(double, double)> init_cond, const 
     fft.execute_forward();
     std::memcpy(ash1[0].data(), fft.backward_data(), bytes_size_);
 
-    step<true, true>(0, as, ash0[0], ash1[0], sp[0], dd0[0], dd1[0], nl[0], fft);
+    step<flags::first_call | flags::first_equation>(0, as, ash0[0], ash1[0], sp[0], dd0[0], dd1[0], nl[0], fft);
     for (size_t i = 1; i <= n; ++i) {
         step(0, as, ash0[0], ash1[0], sp[0], dd0[0], dd1[0], nl[0], fft);
         store(result, indexes, as[0], 0, i, i % m == 0);
@@ -75,7 +75,7 @@ isope::model::new_solve(std::function<complex(double, double)> init_cond, const 
             step(j, as, ash0[j], ash1[j], sp[j], dd0[j - 1], dd1[j], nl[j], fft);
             store(result, indexes, as[j], j, i - j, (i - j) % m == 0);
         }
-        step<true>(i, as, ash0[i], ash1[i], sp[i], dd0[i], dd1[i], nl[i], fft);
+        step<flags::first_call>(i, as, ash0[i], ash1[i], sp[i], dd0[i], dd1[i], nl[i], fft);
         std::swap(dd0, dd1);
     }
 
@@ -135,7 +135,7 @@ isope::model::cvector2d_t isope::model::solve(std::function<complex(double, doub
             for (size_t j = 0; j < xs_.size(); ++j)
                 spn[j] = (buff1[j] - ash[i][j]) / dz_;
             for (size_t j = 0; j < xs_.size(); ++j)
-                buff[j] = spn[j] - expA_[j] * sp[i][j] + (
+                buff[j] = spn[j] - expA_[j] * sp[i][j] + cA_[j] * (
                         buff1[j] * (1. + cA_[j] * dz_ / 2.) + ash[i][j] * expA_[j] * (cA_[j] * dz_ / 2. - 1.));
             std::swap(sp[i], spn);
             std::memcpy(ash[i].data(), buff1.data(), xs_.size() * sizeof(complex));

@@ -31,6 +31,15 @@ namespace isope {
         cvector1d_t expA_, nlfacA_, nlfacAp_, cA_;
         const size_t x_size_, z_size_, bytes_size_;
 
+        struct flags {
+
+            static constexpr size_t none = 0;
+            static constexpr size_t first_call = 1 << 0;
+            static constexpr size_t first_equation = 1 << 1;
+            static constexpr size_t last_equation = 1 << 2;
+
+        };
+
         static rvector1d_t vector_k_(double l, size_t n);
         void non_linear_coeff(const cvector2d_t& values, size_t n, complex* data) const;
         void calculate(const cvector1d_t& values, const complex* nl, const cvector1d_t& nlp,
@@ -40,15 +49,15 @@ namespace isope {
 
         inline void diff(const cvector1d_t& ash0, const cvector1d_t& ash1, cvector1d_t& sp) const;
 
-        template<bool Is0>
+        template<size_t Flags>
         inline void diff0(const cvector1d_t& ash, const cvector1d_t& nl, cvector1d_t& sp) const {
             for (size_t i = 0; i < ash.size(); ++i)
-                sp[i] = Is0
+                sp[i] = utils::has_flag(Flags, flags::first_equation)
                         ? cA_[i] * ash[i] + nl[i]
                         : ash[i] / dz_;
         }
 
-        template<bool IsFirst = false, bool Is0 = false>
+        template<size_t Flags = flags::none>
         inline void step(const size_t n, cvector2d_t& as, cvector1d_t& ash0, cvector1d_t& ash1,
                          cvector1d_t& sp, cvector1d_t& dd0, cvector1d_t& dd1, cvector1d_t& nl, fft::fftw& fft) const {
 
@@ -57,17 +66,17 @@ namespace isope {
 
             non_linear_coeff(as, n, fft.forward_data());
             fft.execute_forward();
-            if (IsFirst) std::memcpy(nl.data(), fft.backward_data(), bytes_size_);
+            if (utils::has_flag(Flags, flags::first_call)) std::memcpy(nl.data(), fft.backward_data(), bytes_size_);
             calculate(ash1, fft.backward_data(), nl, dd0, n, buff.data());
             std::memcpy(nl.data(), fft.backward_data(), bytes_size_);
 
-            if (IsFirst)
-                diff0<Is0>(buff, nl, sp);
-            else {
+            if (utils::has_flag(Flags, flags::first_call))
+                diff0<Flags>(buff, nl, sp);
+            else if (!utils::has_flag(Flags, flags::last_equation)){
                 diff(ash0, buff, spn);
                 for (size_t i = 0; i < x_size_; ++i)
                     dd1[i] = spn[i] - expA_[i] * sp[i] + cA_[i] * (
-                            buff[i] * (1. + cA_[i] * dz_ / 2.) + ash1[i] * expA_[i] * (cA_[i] * dz_ / 2. - 1.));
+                            ash1[i] * (1. + cA_[i] * dz_ / 2.) + ash0[i] * expA_[i] * (cA_[i] * dz_ / 2. - 1.));
                 std::swap(sp, spn);
             }
             std::swap(ash0, ash1);
