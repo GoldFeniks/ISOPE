@@ -19,7 +19,7 @@ int main() {
     auto t1 = std::chrono::system_clock::now();
     auto a = m.solve([=](double x, double z = 0) -> isope::fft::basic_fft::complex {
         return pm / std::cosh(sigma * x + sigma * v / k0 * z) * std::exp(-1.0i * v * x + (1.0i * (sigma * sigma - v * v) / k0 / 2.0) * z);
-    }, 0, static_cast<size_t>(std::round(2e-3 / 0.5e-8)) / 1000);
+    }, 2, static_cast<size_t>(std::round(2e-3 / 0.5e-8)) / 1000);
     auto t2 = std::chrono::system_clock::now();
     std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << std::endl;
     auto size = a.size();

@@ -27,15 +27,15 @@ namespace isope {
         const complex a_, b_;
         const double k0_, sigma_, eps_, v_, dx_, dz_;
         const rvector1d_t xs_, zs_, k_;
-        cvector1d_t expA_, nlfacA_, nlfacAp_, cA_;
+        cvector1d_t expA_, nlfacA_, nlfacAp_, cA_, iC1_, iC2_;
         const size_t x_size_, z_size_, bytes_size_;
 
         struct flags {
 
             static constexpr size_t none = 0;
-            static constexpr size_t first_call = 1 << 0;
-            static constexpr size_t first_equation = 1 << 1;
-            static constexpr size_t last_equation = 1 << 2;
+            static constexpr size_t first_call = 1u << 0u;
+            static constexpr size_t first_equation = 1u << 1u;
+            static constexpr size_t last_equation = 1u << 2u;
 
         };
 
@@ -47,7 +47,7 @@ namespace isope {
         inline void diff(const cvector1d_t& ash0, const cvector1d_t& ash1, cvector1d_t& sp) const;
 
         template<size_t Flags>
-        void calculate(const cvector1d_t& values, const complex* nl, const cvector1d_t& nlp,
+        inline void calculate(const cvector1d_t& values, const complex* nl, const cvector1d_t& nlp,
                                      const cvector1d_t& buff, const size_t n, complex* data) const {
             for (size_t i = 0; i < values.size(); ++i)
                 data[i] = values[i] * expA_[i] + nlfacA_[i] * nl[i] + nlfacAp_[i] * nlp[i] +
@@ -83,8 +83,7 @@ namespace isope {
                 else
                     diff(ash0, buff, spn);
                 for (size_t i = 0; i < x_size_; ++i)
-                    dd1[i] = spn[i] - expA_[i] * sp[i] + cA_[i] * (
-                            ash1[i] * (1. + cA_[i] * dz_ / 2.) + ash0[i] * expA_[i] * (cA_[i] * dz_ / 2. - 1.));
+                    dd1[i] = spn[i] - expA_[i] * sp[i] + cA_[i] * (ash1[i] * iC1_[i] + ash0[i] * iC2_[i]);
                 std::swap(sp, spn);
             }
             std::swap(ash0, ash1);

@@ -25,6 +25,12 @@ isope::model::model(const double k0, const double sigma, const double eps, const
     for (size_t i = 0; i < nlfacAp_.size(); ++i)
         nlfacAp_[i] = (expA_[i] * (-1. / cA_[i] / dz_) + 1. / cA_[i] / dz_ + 1.) / cA_[i];
     nlfacA_[0] = nlfacAp_[0] = dz_ / 2.;
+    iC1_ = cvector1d_t(nx);
+    for (size_t i = 0; i < iC1_.size(); ++i)
+        iC1_[i] = 1. + cA_[i] * dz_ / 2.;
+    iC2_ = cvector1d_t(nx);
+    for (size_t i = 0; i < iC2_.size(); ++i)
+        iC2_[i] = expA_[i] * (cA_[i] * dz_ / 2. - 1.);
 }
 
 void isope::model::diff(const cvector1d_t& ash0, const cvector1d_t& ash1, cvector1d_t& sp) const {
@@ -64,36 +70,55 @@ isope::model::solve(std::function<complex(double, double)> init_cond, const size
     std::memcpy(ash1[0].data(), fft.backward_data(), bytes_size_);
 
     step<flags::first_call | flags::first_equation>(0, as, ash0[0], ash1[0], sp[0], dd0[0], dd1[0], nl[0], fft);
-    for (size_t i = 1; i <= n; ++i) {
-        step<flags::first_equation>(0, as, ash0[0], ash1[0], sp[0], dd0[0], dd1[0], nl[0], fft);
-        store(result, indexes, as[0], 0, i, i % m == 0);
-        for (size_t j = 1; j < i; ++j) {
-            step(j, as, ash0[j], ash1[j], sp[j], dd0[j - 1], dd1[j], nl[j], fft);
-            store(result, indexes, as[j], j, i - j, (i - j) % m == 0);
+
+    if (n > 0) {
+
+        for (size_t i = 1; i <= n; ++i) {
+            step<flags::first_equation>(0, as, ash0[0], ash1[0], sp[0], dd0[0], dd1[0], nl[0], fft);
+            store(result, indexes, as[0], 0, i, i % m == 0);
+            for (size_t j = 1; j < i; ++j) {
+                step(j, as, ash0[j], ash1[j], sp[j], dd0[j - 1], dd1[j], nl[j], fft);
+                store(result, indexes, as[j], j, i - j, (i - j) % m == 0);
+            }
+            step<flags::first_call>(i, as, ash0[i], ash1[i], sp[i], dd0[i], dd1[i], nl[i], fft);
+            std::swap(dd0, dd1);
         }
-        step<flags::first_call>(i, as, ash0[i], ash1[i], sp[i], dd0[i], dd1[i], nl[i], fft);
-        std::swap(dd0, dd1);
+
+        for (size_t i = n + 1; i < z_size_ - n; ++i) {
+            step<flags::first_equation>(0, as, ash0[0], ash1[0], sp[0], dd0[0], dd1[0], nl[0], fft);
+            store(result, indexes, as[0], 0, i, i % m == 0);
+            for (size_t j = 1; j < n; ++j) {
+                step(j, as, ash0[j], ash1[j], sp[j], dd0[j - 1], dd1[j], nl[j], fft);
+                store(result, indexes, as[j], j, i - j, (i - j) % m == 0);
+            }
+            step<flags::last_equation>(n, as, ash0[n], ash1[n], sp[n], dd0[n], dd1[n], nl[n], fft);
+            store(result, indexes, as[n], n, i - n, (i - n) % m == 0);
+            std::swap(dd0, dd1);
+            if (i % 40000 == 0)
+                std::cout << i << std::endl;
+        }
+
+        for (size_t i = 1; i <= n; ++i) {
+            step<flags::last_equation>(n, as, ash0[n], ash1[n], sp[n], dd0[n], dd1[n], nl[n], fft);
+            store(result, indexes, as[n], n, i - n, (i - n) % m == 0);
+            for (size_t j = n - 1; j >= i; --j) {
+                step(j, as, ash0[j], ash1[j], sp[j], dd0[j - 1], dd1[j], nl[j], fft);
+                store(result, indexes, as[j], j, i - j, (i - j) % m == 0);
+            }
+            std::swap(dd0, dd1);
+        }
+    }
+    else {
+
+        for (size_t i = 1; i < z_size_; ++i) {
+            step<flags::first_equation | flags::last_equation>(0, as, ash0[0], ash1[0], sp[0], dd0[0], dd1[0], nl[0], fft);
+            store(result, indexes, as[0], 0, i, i % m == 0);
+            if (i % 40000 == 0)
+                std::cout << i << std::endl;
+        }
+
     }
 
-    for (size_t i = n + 1; i < z_size_ - n; ++i) {
-        step<flags::first_equation>(0, as, ash0[0], ash1[0], sp[0], dd0[0], dd1[0], nl[0], fft);
-        store(result, indexes, as[0], 0, i, i % m == 0);
-        for (size_t j = 1; j < n; ++j) {
-            step(j, as, ash0[j], ash1[j], sp[j], dd0[j - 1], dd1[j], nl[j], fft);
-            store(result, indexes, as[j], j, i - j, (i - j) % m == 0);
-        }
-        std::swap(dd0, dd1);
-        if (i % 40000 == 0)
-            std::cout << i << std::endl;
-    }
-
-    for (size_t i = 1; i <= n; ++i) {
-        for (size_t j = n; j >= i; --j) {
-            step(j, as, ash0[j], ash1[j], sp[j], dd0[j - 1], dd1[j], nl[j], fft);
-            store(result, indexes, as[j], j, i - j, (i - j) % m == 0);
-        }
-        std::swap(dd0, dd1);
-    }
     return result;
 }
 
