@@ -40,7 +40,7 @@ void isope::model::diff(const cvector1d_t& ash0, const cvector1d_t& ash1, cvecto
 
 void isope::model::store(cvector2d_t& result, std::vector<size_t>& indexes, const cvector1d_t& values,
                          const size_t index, const size_t z_index, const bool do_store) const {
-    if (!do_store) return;
+    if (!do_store || index != 1) return;
     auto& ind = indexes[index];
     for (size_t i = 0; i < values.size(); ++i)
         result[ind][i] += values[i] * std::exp(1i * k0_ * zs_[z_index]);
@@ -80,7 +80,7 @@ isope::model::solve(std::function<complex(double, double)> init_cond, const size
                 step(j, as, ash0[j], ash1[j], sp[j], dd0[j - 1], dd1[j], nl[j], fft);
                 store(result, indexes, as[j], j, i - j, (i - j) % m == 0);
             }
-            step<flags::first_call>(i, as, ash0[i], ash1[i], sp[i], dd0[i], dd1[i], nl[i], fft);
+            step<flags::first_call>(i, as, ash0[i], ash1[i], sp[i], dd0[i - 1], dd1[i], nl[i], fft);
             std::swap(dd0, dd1);
         }
 
@@ -91,7 +91,7 @@ isope::model::solve(std::function<complex(double, double)> init_cond, const size
                 step(j, as, ash0[j], ash1[j], sp[j], dd0[j - 1], dd1[j], nl[j], fft);
                 store(result, indexes, as[j], j, i - j, (i - j) % m == 0);
             }
-            step<flags::last_equation>(n, as, ash0[n], ash1[n], sp[n], dd0[n], dd1[n], nl[n], fft);
+            step<flags::last_equation>(n, as, ash0[n], ash1[n], sp[n], dd0[n - 1], dd1[n], nl[n], fft);
             store(result, indexes, as[n], n, i - n, (i - n) % m == 0);
             std::swap(dd0, dd1);
             if (i % 40000 == 0)
@@ -99,7 +99,7 @@ isope::model::solve(std::function<complex(double, double)> init_cond, const size
         }
 
         for (size_t i = 1; i <= n; ++i) {
-            step<flags::last_equation>(n, as, ash0[n], ash1[n], sp[n], dd0[n], dd1[n], nl[n], fft);
+            step<flags::last_equation>(n, as, ash0[n], ash1[n], sp[n], dd0[n - 1], dd1[n], nl[n], fft);
             store(result, indexes, as[n], n, i - n, (i - n) % m == 0);
             for (size_t j = n - 1; j >= i; --j) {
                 step(j, as, ash0[j], ash1[j], sp[j], dd0[j - 1], dd1[j], nl[j], fft);
