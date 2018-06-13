@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstddef>
+#include <vector>
+#include <functional>
 
 namespace isope {
 
@@ -21,22 +23,6 @@ namespace isope {
             return mesh<T>(a - d, b + d, 2 * n);
         }
 
-        template<typename It1, typename It2, typename T>
-        void multiply_by(It1 from, It2 to, const T& value) {
-            while (from != to) {
-                *from *= value;
-                ++from;
-            }
-        };
-
-        template<typename It1, typename It2, typename T>
-        void divide_by(It1 from, It2 to, const T& value) {
-            while (from != to) {
-                *from /= value;
-                ++from;
-            }
-        };
-
         template<typename T>
         constexpr bool has_flag(const T& a, const T& b) {
             return a & b;
@@ -47,7 +33,18 @@ namespace isope {
             vector.resize(size);
             for (size_t i = 0; i < size; ++i)
                 vector[i] = init_fun(i);
-        };
+        }
+
+        template<typename T, typename S, typename F>
+        void export_to_stream(const T& value, S& stream, const F& func = [](const T& value) { return value; }) {
+            stream << func(value);
+        }
+
+        template<typename T, typename S, typename F>
+        void export_to_stream(const std::vector<T>& data, S& stream, const F& func) {
+            for (const auto& it : data)
+                export_to_stream(it, stream, func);
+        }
 
     }
 

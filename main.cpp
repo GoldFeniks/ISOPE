@@ -21,6 +21,7 @@ int main() {
         return pm / std::cosh(sigma * x + sigma * v / k0 * z) * std::exp(-1.0i * v * x + (1.0i * (sigma * sigma - v * v) / k0 / 2.0) * z);
     }, 1, static_cast<size_t>(std::round(2e-3 / 0.5e-8)) / 1000);
     auto t2 = std::chrono::system_clock::now();
+    isope::utils::export_to_stream(1, std::cout, [](const int& a) { return a; });
     std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << std::endl;
     auto size = a.size();
     std::ofstream out("tests/test3.bin", std::ios_base::binary);

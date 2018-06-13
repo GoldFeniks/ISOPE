@@ -36,12 +36,14 @@ const isope::fft::basic_fft & isope::fft::fftw::execute_backward() const {
 }
 
 const isope::fft::basic_fft & isope::fft::fftw::normalize_forward() const {
-    utils::divide_by(backward_data_, backward_data_end_, std::sqrt(dsize_));
+    std::transform(backward_data_, backward_data_end_, backward_data_,
+                   [this](const complex& value) { return value / std::sqrt(dsize_); });
     return *this;
 }
 
 const isope::fft::basic_fft & isope::fft::fftw::normalize_backward() const {
-    utils::divide_by(forward_data_, forward_data_end_, dsize_);
+    std::transform(backward_data_, backward_data_end_, backward_data_,
+                   [this](const complex& value) { return value / dsize_; });
     return *this;
 }
 
