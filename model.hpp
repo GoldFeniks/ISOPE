@@ -27,6 +27,7 @@ namespace isope {
         const complex a_, b_;
         const double k0_, sigma_, eps_, v_, dx_, dz_;
         const rvector1d_t xs_, zs_, k_;
+        rvector1d_t s_;
         cvector1d_t expA_, nlfacA_, nlfacAp_, cA_, iC1_, iC2_;
         const size_t x_size_, z_size_, bytes_size_;
 

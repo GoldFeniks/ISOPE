@@ -1,5 +1,7 @@
 #include <iostream>
 #include <cstring>
+#include <fstream>
+#include <iomanip>
 #include "model.hpp"
 #include "utils.hpp"
 
@@ -8,29 +10,35 @@ using namespace std::complex_literals;
 isope::model::model(const double k0, const double sigma, const double eps, const double v,
                     const size_t nx, const double x0, const double x1,
                     const size_t nz, const double z0, const double z1) :
-    a_(1i / (2. * k0)), b_(1i * eps * k0 / 2.), k0_(k0), sigma_(sigma), eps_(eps), v_(v), dx_((x1 - x0) / nx), dz_((z1 - z0) / nz),
-    xs_(utils::mesh<rvector1d_t>(x0, x1, nx)), zs_(utils::mesh<rvector1d_t>(z0, z1, nz)),
-    k_(vector_k_(x1 - x0, nx)), x_size_(xs_.size()), z_size_(zs_.size()), bytes_size_(xs_.size() * sizeof(complex))
+    a_(1i / (2. * k0)), b_(1i * eps * k0 / 2.), k0_(k0), sigma_(sigma), eps_(eps), v_(v), dx_((x1 - x0) / (nx - 1)), dz_((z1 - z0) / (nz - 1)),
+    xs_(utils::expanded_mesh<rvector1d_t>(x0, x1, nx)), zs_(utils::mesh<rvector1d_t>(z0, z1, nz)),
+    k_(vector_k_(xs_.back() - xs_[0], xs_.size())), x_size_(xs_.size()), z_size_(zs_.size()), bytes_size_(xs_.size() * sizeof(complex))
 {
-    cA_ = cvector1d_t(nx);
+    cA_ = cvector1d_t(x_size_);
     for (size_t i = 0; i < cA_.size(); ++i)
         cA_[i] = -k_[i] * a_;
-    expA_ = cvector1d_t(nx);
+    expA_ = cvector1d_t(x_size_);
     for (size_t i = 0; i < expA_.size(); ++i)
         expA_[i] = std::exp(dz_ * cA_[i]);
-    nlfacA_ = cvector1d_t(nx);
+    nlfacA_ = cvector1d_t(x_size_);
     for (size_t i = 0; i < nlfacA_.size(); ++i)
         nlfacA_[i] = (expA_[i] * (1. + 1. / cA_[i] / dz_) - 1. / cA_[i] / dz_ - 2.) / cA_[i];
-    nlfacAp_ = cvector1d_t(nx);
+    nlfacAp_ = cvector1d_t(x_size_);
     for (size_t i = 0; i < nlfacAp_.size(); ++i)
         nlfacAp_[i] = (expA_[i] * (-1. / cA_[i] / dz_) + 1. / cA_[i] / dz_ + 1.) / cA_[i];
     nlfacA_[0] = nlfacAp_[0] = dz_ / 2.;
-    iC1_ = cvector1d_t(nx);
+    iC1_ = cvector1d_t(x_size_);
     for (size_t i = 0; i < iC1_.size(); ++i)
         iC1_[i] = 1. + cA_[i] * dz_ / 2.;
-    iC2_ = cvector1d_t(nx);
+    iC2_ = cvector1d_t(x_size_);
     for (size_t i = 0; i < iC2_.size(); ++i)
         iC2_[i] = expA_[i] * (cA_[i] * dz_ / 2. - 1.);
+    const double delta = 2e-11;
+    s_ = rvector1d_t(x_size_, 0);
+    for (size_t i = 0; i < nx / 2; ++i)
+        s_[i] = std::pow((xs_[i] - x0) / delta, 2) / 2. / k0_;
+    for (size_t i = x_size_ / 4 * 3; i < x_size_; ++i)
+        s_[i] = std::pow((xs_[i] - x1) / delta, 2) / 2. / k0_;
 }
 
 void isope::model::diff(const cvector1d_t& ash0, const cvector1d_t& ash1, cvector1d_t& sp) const {
@@ -40,7 +48,7 @@ void isope::model::diff(const cvector1d_t& ash0, const cvector1d_t& ash1, cvecto
 
 void isope::model::store(cvector2d_t& result, std::vector<size_t>& indexes, const cvector1d_t& values,
                          const size_t index, const size_t z_index, const bool do_store) const {
-    if (!do_store || index != 1) return;
+    if (!do_store) return;
     auto& ind = indexes[index];
     for (size_t i = 0; i < values.size(); ++i)
         result[ind][i] += values[i] * std::exp(1i * k0_ * zs_[z_index]);
@@ -127,6 +135,10 @@ void isope::model::non_linear_coeff(const cvector2d_t& values, const size_t n, c
         for (size_t j = 0; j <= n - i; ++j)
             for (size_t k = 0; k < values[0].size(); ++k)
                 data[k] = values[i][k] * values[j][k] * std::conj(values[n - i - j][k]) * b_;
+    for (size_t i = 0; i < x_size_ / 4; ++i)
+        data[i] -= values[n][i] * s_[i];
+    for (size_t i = x_size_ / 4 * 3; i < x_size_; ++i)
+        data[i] -= values[n][i] * s_[i];
 }
 
 isope::model::rvector1d_t isope::model::vector_k_(const double l, const size_t n) {
