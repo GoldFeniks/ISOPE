@@ -42,6 +42,13 @@ namespace isope {
             return a & b;
         }
 
+        template<typename T, typename F>
+        void init_vector(T& vector, size_t size, const F& init_fun) {
+            vector.resize(size);
+            for (size_t i = 0; i < size; ++i)
+                vector[i] = init_fun(i);
+        };
+
     }
 
 }
