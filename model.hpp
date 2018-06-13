@@ -12,7 +12,7 @@ namespace isope {
     using namespace std::complex_literals;
 
     template<bool UseCAP>
-    class model {
+    class model_ {
 
     public:
 
@@ -21,9 +21,9 @@ namespace isope {
         using cvector1d_t = types::vector1d_t<complex>;
         using cvector2d_t = types::vector2d_t<complex>;
 
-        model(const double k0, const double sigma, const double eps, const double v,
+        model_(const double k0, const double sigma, const double eps, const double v,
               const size_t nx, const double x0, const double x1,
-              const size_t nz, const double z0, const double z1, std::enable_if_t<UseCAP,const double> delta) :
+              const size_t nz, const double z0, const double z1, std::enable_if_t<UseCAP, const double> delta) :
         a_(1i / (2. * k0)), b_(1i * eps * k0 / 2.), k0_(k0), sigma_(sigma), eps_(eps), v_(v),
                 dx_((x1 - x0) / (nx - 1)), dz_((z1 - z0) / (nz - 1)),
         xs_(utils::expanded_mesh<rvector1d_t>(x0, x1, nx)), zs_(utils::mesh<rvector1d_t>(z0, z1, nz)),
@@ -237,6 +237,9 @@ namespace isope {
         }
 
     };
+
+    using model = model_<false>;
+    using cap_model = model_<true>;
 
 }
 

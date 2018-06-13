@@ -20,7 +20,7 @@ void export_to_stream(It begin, const It end, S& stream, const F& func = [](cons
 int main() {
     const double k0 = 2 * M_PI / 1e-6 * 2, sigma = std::sqrt(2) * 1 / 1.0049e-6, eps = 2 * 2e-17 / 2, v = std::sqrt(2) * 0. / 1.0049e-6;
     const auto pm = sigma / k0 * std::sqrt(2 / eps);
-    isope::model<true> m(k0, sigma, eps, v, 256, -4e-05, 4e-05, 1200000
+    isope::cap_model m(k0, sigma, eps, v, 256, -4e-05, 4e-05, 1200000
                    /*static_cast<size_t>(std::round(2e-3 / 0.5e-8))*/, 0, 0.006, 2e-11);
     auto t1 = std::chrono::system_clock::now();
     auto a = m.solve([=](double x, double z = 0) -> isope::fft::basic_fft::complex {
