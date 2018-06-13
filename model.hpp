@@ -16,7 +16,7 @@ namespace isope {
 
     public:
 
-        using complex = fft::basic_fft::complex;
+        using complex = types::complex;
         using rvector1d_t = types::vector1d_t<double>;
         using cvector1d_t = types::vector1d_t<complex>;
         using cvector2d_t = types::vector2d_t<complex>;
