@@ -29,7 +29,7 @@ void output_result(const isope::model_<UseCAP>& model, const std::string& out_fi
             out.write(reinterpret_cast<const char*>(&model.z_coords()[i]), sizeof(double));
         out.write(reinterpret_cast<const char*>(&model.z_coords().back()), sizeof(double));
         for (const auto& it : result)
-            out.write(reinterpret_cast<const char*>(it.data() + (UseCAP ? s2 / 2 : 0)), s2 * sizeof(double));
+            out.write(reinterpret_cast<const char*>(it.data() + (UseCAP ? s2 / 2 : 0)), s2 * sizeof(isope::types::complex));
     } else {
         std::ofstream out(out_file);
         out << s2 << '\n';
