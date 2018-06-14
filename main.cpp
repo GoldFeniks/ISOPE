@@ -1,6 +1,6 @@
 #include <iostream>
 #include <fstream>
-#include <vector>
+#include <vector>   
 #include <chrono>
 #include <cstring>
 #include <iomanip>
@@ -21,8 +21,8 @@ void output_result(const isope::model_<UseCAP>& model, const std::string& out_fi
     if (binary) {
         std::ofstream out(out_file, std::ios_base::binary);
         const auto dx = model.dx(), dz = model.dz();
-        out.write(reinterpret_cast<const char*>(&s1), sizeof(s1));
-        out.write(reinterpret_cast<const char*>(&s2), sizeof(s2));
+        out.write(reinterpret_cast<const char*>(&s2), sizeof(s1));
+        out.write(reinterpret_cast<const char*>(&s1), sizeof(s2));
         out.write(reinterpret_cast<const char*>(&dx), sizeof(dx));
         out.write(reinterpret_cast<const char*>(&dz), sizeof(dz));
         out.write(reinterpret_cast<const char*>(model.x_coords().data() + (UseCAP ? s2 / 2 : 0)), s2 * sizeof(double));
@@ -33,8 +33,8 @@ void output_result(const isope::model_<UseCAP>& model, const std::string& out_fi
             out.write(reinterpret_cast<const char*>(it.data() + (UseCAP ? s2 / 2 : 0)), s2 * sizeof(double));
     } else {
         std::ofstream out(out_file);
-        out << s1 << '\n';
         out << s2 << '\n';
+        out << s1 << '\n';
         out << model.dx() << '\n';
         out << model.dz() << '\n';
         for (size_t i = 0; i < s2; ++i)
