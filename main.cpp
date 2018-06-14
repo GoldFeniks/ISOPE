@@ -1,6 +1,6 @@
 #include <iostream>
 #include <fstream>
-#include <vector>   
+#include <vector>
 #include <chrono>
 #include <cstring>
 #include <iomanip>
@@ -8,7 +8,6 @@
 #include "fft.hpp"
 #include "utils.hpp"
 #include "interpolation.hpp"
-#include <chrono>
 #include <boost/program_options.hpp>
 
 using namespace std::complex_literals;
@@ -17,7 +16,7 @@ namespace po = boost::program_options;
 template<bool UseCAP>
 void output_result(const isope::model_<UseCAP>& model, const std::string& out_file, const bool binary,
                     const std::vector<std::vector<isope::types::complex>>& result, const size_t skip) {
-    const auto s1 = result.size(), s2 = result[0].size() / (UseCAP ? 2 : 1);
+    const uint64_t s1 = result.size(), s2 = result[0].size() / (UseCAP ? 2 : 1);
     if (binary) {
         std::ofstream out(out_file, std::ios_base::binary);
         const auto dx = model.dx(), dz = model.dz();
@@ -87,15 +86,15 @@ int main(int argc, char* argv[]) {
     std::vector<isope::types::complex> data;
     if (vm.count("binaryinput")) {
         std::ifstream in(in_file, std::ios_base::binary);
-        uint32_t n = 0;
-        in.read(reinterpret_cast<char*>(&n), 32);
+        uint64_t n = 0;
+        in.read(reinterpret_cast<char*>(&n), 64);
         coords.resize(n); data.resize(n);
         in.read(reinterpret_cast<char*>(coords.data()), n * sizeof(double));
         in.read(reinterpret_cast<char*>(data.data()), n * sizeof(isope::types::complex));
     }
     else {
         std::ifstream in(in_file);
-        uint32_t n = 0; in >> n;
+        uint64_t n = 0; in >> n;
         coords.resize(n); data.resize(n);
         for (auto& it : coords) in >> it;
         for (auto& it : data) in >> it;
