@@ -13,6 +13,14 @@
 using namespace std::complex_literals;
 namespace po = boost::program_options;
 
+template<typename T, typename C, typename D>
+auto generate_interpolation(const C& coords, const D& data) {
+    std::vector<T> result; result.reserve(coords.size());
+    for (size_t i = 0; i < coords.size(); ++i)
+        result.emplace_back(coords[i].begin(), coords[i].end(), data[i].begin(), data[i].end());
+    return result;
+};
+
 template<bool UseCAP>
 void output_result(const isope::model_<UseCAP>& model, const std::string& out_file, const bool binary,
                     const std::vector<std::vector<isope::types::complex>>& result, const size_t skip) {
@@ -82,40 +90,48 @@ int main(int argc, char* argv[]) {
         std::cout << desc << std::endl;
         return 0;
     }
-    std::vector<double> coords;
-    std::vector<isope::types::complex> data;
+    std::vector<std::vector<double>> coords;
+    std::vector<std::vector<isope::types::complex>> data;
     if (vm.count("binaryinput")) {
         std::ifstream in(in_file, std::ios_base::binary);
-        uint64_t n = 0;
-        in.read(reinterpret_cast<char*>(&n), 64);
+        uint16_t n = 0;
+        in.read(reinterpret_cast<char*>(&n), 16);
         coords.resize(n); data.resize(n);
-        in.read(reinterpret_cast<char*>(coords.data()), n * sizeof(double));
-        in.read(reinterpret_cast<char*>(data.data()), n * sizeof(isope::types::complex));
+        for (uint16_t i = 0; i < n; ++i) {
+            uint64_t count = 0;
+            in.read(reinterpret_cast<char*>(&count), 64);
+            coords[i].resize(count); data[i].resize(count);
+            in.read(reinterpret_cast<char*>(coords[i].data()), count * sizeof(double));
+            in.read(reinterpret_cast<char*>(data[i].data()), count * sizeof(isope::types::complex));
+        }
     }
     else {
         std::ifstream in(in_file);
-        uint64_t n = 0; in >> n;
+        uint16_t n = 0; in >> n;
         coords.resize(n); data.resize(n);
-        for (auto& it : coords) in >> it;
-        for (auto& it : data) in >> it;
+        for (uint16_t i = 0; i < n; ++i) {
+            uint64_t count = 0; in >> count;
+            coords[i].resize(count); data[i].resize(count);
+            for (auto& it : coords[i]) in >> it;
+            for (auto& it : data[i]) in >> it;
+        }
     }
-    isope::interpolation::interpolation<double, isope::types::complex>* inter;
-    if (vm.count("linear"))
-        inter = new isope::interpolation::linear<double, isope::types::complex>(
-                coords.data(), coords.data() + coords.size(), data.data(), data.data() + data.size());
-    else
-        inter = new isope::interpolation::polynomial<double, isope::types::complex>(
-                coords.data(), coords.data() + coords.size(), data.data(), data.data() + data.size());
-    const double k0 = 2 * M_PI / 1e-6 * 2, sigma = std::sqrt(2) * 1 / 1.0049e-6, v = std::sqrt(2) * 0. / 1.0049e-6;
-    const auto pm = sigma / k0 * std::sqrt(2 / eps);
     if (vm.count("cap")) {
         isope::cap_model model(k, eps, nx, x0, x1, nz, z0, z1, delta);
-        const auto result = model.solve(*inter, ne, skip, verb);
+        isope::types::vector2d_t<isope::types::complex> result;
+        if (vm.count("linear"))
+            result = model.solve(generate_interpolation<isope::interpolation::linear<double, isope::types::complex>>(coords, data), ne, skip, verb);
+        else
+            result = model.solve(generate_interpolation<isope::interpolation::polynomial<double, isope::types::complex>>(coords, data), ne, skip, verb);
         output_result(model, out_file, vm.count("binaryoutput") > 0, result, skip);
     }
     else {
         isope::model model(k, eps, nx, x0, x1, nz, z0, z1, delta);
-        const auto result = model.solve(*inter, ne, skip, verb);
+        isope::types::vector2d_t<isope::types::complex> result;
+        if (vm.count("linear"))
+            result = model.solve(generate_interpolation<isope::interpolation::linear<double, isope::types::complex>>(coords, data), ne, skip, verb);
+        else
+            result = model.solve(generate_interpolation<isope::interpolation::polynomial<double, isope::types::complex>>(coords, data), ne, skip, verb);
         output_result(model, out_file, vm.count("binaryoutput") > 0, result, skip);
     }
 }

@@ -59,7 +59,7 @@ namespace isope {
         }
 
         template<typename F>
-        cvector2d_t solve(const F& init_cond, const size_t n, const size_t m, const size_t verb) const {
+        cvector2d_t solve(const std::vector<F>& init_conds, const size_t n, const size_t m, const size_t verb) const {
             cvector2d_t result(zs_.size() / m, cvector1d_t(x_size_, 0.)),
                     as(n + 1, cvector1d_t(x_size_, 0.)),
                     ash0(n + 1, cvector1d_t(x_size_, 0.)),
@@ -73,8 +73,9 @@ namespace isope {
 
             std::vector<size_t> indexes(n + 1, 1);
 
-            for (size_t i = 0; i < x_size_; ++i)
-                result[0][i] = as[0][i] = init_cond(xs_[i]);
+            for (size_t i = 0; i < n; ++i)
+                for (size_t j = 0; j < x_size_; ++j)
+                    result[0][j] += as[i][j] = init_conds[i](xs_[j]);
 
             std::memcpy(fft.forward_data(), as[0].data(), bytes_size_);
             fft.execute_forward();
