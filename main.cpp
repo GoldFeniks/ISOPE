@@ -35,7 +35,6 @@ void output_result(const isope::model_<UseCAP>& model, const std::string& out_fi
         out.write(reinterpret_cast<const char*>(model.x_coords().data() + (UseCAP ? s2 / 2 : 0)), s2 * sizeof(double));
         for (size_t i = 0; i < model.z_coords().size(); i += skip)
             out.write(reinterpret_cast<const char*>(&model.z_coords()[i]), sizeof(double));
-        out.write(reinterpret_cast<const char*>(&model.z_coords().back()), sizeof(double));
         for (const auto& it : result)
             out.write(reinterpret_cast<const char*>(it.data() + (UseCAP ? s2 / 2 : 0)), s2 * sizeof(isope::types::complex_t));
     } else {
@@ -49,7 +48,7 @@ void output_result(const isope::model_<UseCAP>& model, const std::string& out_fi
         out << '\n';
         for (size_t i = 0; i < model.z_coords().size(); i += skip)
             out << model.z_coords()[i] << ' ';
-        out << model.z_coords().back() << '\n';
+        out << '\n';
         for (const auto& it : result) {
             for (size_t i = 0; i < s2; ++i)
                 out << std::setprecision(6) << it[i + (UseCAP ? s2 / 2 : 0)] << ' ';
