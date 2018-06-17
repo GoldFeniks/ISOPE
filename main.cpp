@@ -23,7 +23,7 @@ auto generate_interpolation(const C& coords, const D& data) {
 
 template<bool UseCAP>
 void output_result(const isope::model_<UseCAP>& model, const std::string& out_file, const bool binary,
-                    const std::vector<std::vector<isope::types::complex>>& result, const size_t skip) {
+                    const std::vector<std::vector<isope::types::complex_t>>& result, const size_t skip) {
     const uint64_t s1 = result.size(), s2 = result[0].size() / (UseCAP ? 2 : 1);
     if (binary) {
         std::ofstream out(out_file, std::ios_base::binary);
@@ -37,7 +37,7 @@ void output_result(const isope::model_<UseCAP>& model, const std::string& out_fi
             out.write(reinterpret_cast<const char*>(&model.z_coords()[i]), sizeof(double));
         out.write(reinterpret_cast<const char*>(&model.z_coords().back()), sizeof(double));
         for (const auto& it : result)
-            out.write(reinterpret_cast<const char*>(it.data() + (UseCAP ? s2 / 2 : 0)), s2 * sizeof(isope::types::complex));
+            out.write(reinterpret_cast<const char*>(it.data() + (UseCAP ? s2 / 2 : 0)), s2 * sizeof(isope::types::complex_t));
     } else {
         std::ofstream out(out_file);
         out << s2 << '\n';
@@ -91,7 +91,7 @@ int main(int argc, char* argv[]) {
         return 0;
     }
     std::vector<std::vector<double>> coords;
-    std::vector<std::vector<isope::types::complex>> data;
+    std::vector<std::vector<isope::types::complex_t>> data;
     if (vm.count("binaryinput")) {
         std::ifstream in(in_file, std::ios_base::binary);
         uint16_t n = 0;
@@ -102,7 +102,7 @@ int main(int argc, char* argv[]) {
             in.read(reinterpret_cast<char*>(&count), 64);
             coords[i].resize(count); data[i].resize(count);
             in.read(reinterpret_cast<char*>(coords[i].data()), count * sizeof(double));
-            in.read(reinterpret_cast<char*>(data[i].data()), count * sizeof(isope::types::complex));
+            in.read(reinterpret_cast<char*>(data[i].data()), count * sizeof(isope::types::complex_t));
         }
     }
     else {
@@ -118,20 +118,20 @@ int main(int argc, char* argv[]) {
     }
     if (vm.count("cap")) {
         isope::cap_model model(k, eps, nx, x0, x1, nz, z0, z1, delta);
-        isope::types::vector2d_t<isope::types::complex> result;
+        isope::types::vector2d_t<isope::types::complex_t> result;
         if (vm.count("linear"))
-            result = model.solve(generate_interpolation<isope::interpolation::linear<double, isope::types::complex>>(coords, data), ne, skip, verb);
+            result = model.solve(generate_interpolation<isope::interpolation::linear<double, isope::types::complex_t>>(coords, data), ne, skip, verb);
         else
-            result = model.solve(generate_interpolation<isope::interpolation::polynomial<double, isope::types::complex>>(coords, data), ne, skip, verb);
+            result = model.solve(generate_interpolation<isope::interpolation::polynomial<double, isope::types::complex_t>>(coords, data), ne, skip, verb);
         output_result(model, out_file, vm.count("binaryoutput") > 0, result, skip);
     }
     else {
         isope::model model(k, eps, nx, x0, x1, nz, z0, z1, delta);
-        isope::types::vector2d_t<isope::types::complex> result;
+        isope::types::vector2d_t<isope::types::complex_t> result;
         if (vm.count("linear"))
-            result = model.solve(generate_interpolation<isope::interpolation::linear<double, isope::types::complex>>(coords, data), ne, skip, verb);
+            result = model.solve(generate_interpolation<isope::interpolation::linear<double, isope::types::complex_t>>(coords, data), ne, skip, verb);
         else
-            result = model.solve(generate_interpolation<isope::interpolation::polynomial<double, isope::types::complex>>(coords, data), ne, skip, verb);
+            result = model.solve(generate_interpolation<isope::interpolation::polynomial<double, isope::types::complex_t>>(coords, data), ne, skip, verb);
         output_result(model, out_file, vm.count("binaryoutput") > 0, result, skip);
     }
 }

@@ -16,20 +16,21 @@ namespace isope {
 
     public:
 
-        using complex = types::complex;
-        using rvector1d_t = types::vector1d_t<double>;
-        using cvector1d_t = types::vector1d_t<complex>;
-        using cvector2d_t = types::vector2d_t<complex>;
+        using complex_t = types::complex_t;
+        using real_t = types::real_t;
+        using rvector1d_t = types::vector1d_t<real_t>;
+        using cvector1d_t = types::vector1d_t<complex_t>;
+        using cvector2d_t = types::vector2d_t<complex_t>;
 
-        model_(const double k0, const double eps,
-              const size_t nx, const double x0, const double x1,
-              const size_t nz, const double z0, const double z1, const double delta) :
+        model_(const real_t k0, const real_t eps,
+              const size_t nx, const real_t x0, const real_t x1,
+              const size_t nz, const real_t z0, const real_t z1, const real_t delta) :
         a_(1i / (2. * k0)), b_(1i * eps * k0 / 2.), k0_(k0),
                 dx_((x1 - x0) / (nx - 1)), dz_((z1 - z0) / (nz - 1)),
         xs_(UseCAP ? utils::expanded_mesh<rvector1d_t>(x0, x1, nx) : utils::mesh<rvector1d_t>(x0, x1, nx)),
         zs_(utils::mesh<rvector1d_t>(z0, z1, nz)),
         k_(vector_k_(xs_.back() - xs_[0], xs_.size())),
-        x_size_(xs_.size()), z_size_(zs_.size()), bytes_size_(xs_.size() * sizeof(complex))
+        x_size_(xs_.size()), z_size_(zs_.size()), bytes_size_(xs_.size() * sizeof(complex_t))
         {
             if (UseCAP)
                 utils::init_vector(s_, x_size_,
@@ -156,8 +157,8 @@ namespace isope {
 
     private:
 
-        const complex a_, b_;
-        const double k0_, dx_, dz_;
+        const complex_t a_, b_;
+        const real_t k0_, dx_, dz_;
         const rvector1d_t xs_, zs_, k_;
         rvector1d_t s_;
         cvector1d_t c_coeff_, exp_coeff_, nl_coeff_, nlp_coeff_, integral_coeff1_, integral_coeff2_;
@@ -172,7 +173,7 @@ namespace isope {
 
         };
 
-        static rvector1d_t vector_k_(const double l, const size_t n) {
+        static rvector1d_t vector_k_(const real_t l, const size_t n) {
             rvector1d_t result(n);
             for (size_t i = 0; i < n / 2; ++i)
                 result[i] = i * 2 * M_PI / l;
@@ -185,7 +186,7 @@ namespace isope {
             return result;
         }
 
-        void non_linear_coeff(const cvector2d_t& values, const size_t n, complex* data) const {
+        void non_linear_coeff(const cvector2d_t& values, const size_t n, complex_t* data) const {
             for (size_t i = 0; i <= n; ++i)
                 for (size_t j = 0; j <= n - i; ++j)
                     for (size_t k = 0; k < values[0].size(); ++k)
@@ -213,8 +214,8 @@ namespace isope {
         }
 
         template<size_t Flags>
-        inline void calculate(const cvector1d_t& values, const complex* nl, const cvector1d_t& nlp,
-                                     const cvector1d_t& buff, const size_t n, complex* data) const {
+        inline void calculate(const cvector1d_t& values, const complex_t* nl, const cvector1d_t& nlp,
+                                     const cvector1d_t& buff, const size_t n, complex_t* data) const {
             for (size_t i = 0; i < values.size(); ++i)
                 data[i] = values[i] * exp_coeff_[i] + nl_coeff_[i] * nl[i] + nlp_coeff_[i] * nlp[i] +
                           (utils::has_flag(Flags, flags::first_equation) ? 0. : a_ * buff[i]);
@@ -265,4 +266,3 @@ namespace isope {
     using cap_model = model_<true>;
 
 }
-
