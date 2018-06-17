@@ -74,7 +74,7 @@ namespace isope {
 
             std::vector<size_t> indexes(n + 1, 1);
 
-            for (size_t i = 0; i < n; ++i)
+            for (size_t i = 0; i <= n; ++i)
                 for (size_t j = 0; j < x_size_; ++j)
                     result[0][j] += as[i][j] = init_conds[i](xs_[j]);
 
