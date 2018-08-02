@@ -155,7 +155,7 @@ namespace isope {
                          T(393)   / T(640),
                         -T(92097) / T(339200),
                          T(187)   / T(2100),
-                         T(1) / T(40)
+                         T(1)     / T(40)
                 };
         static constexpr types::array1d_t<T, 7> c_table = dormand_prince_coefficients1<T>::c_table;
 
@@ -163,7 +163,39 @@ namespace isope {
 
     };
 
-    template<typename ValueType, typename ArgumentType, typename Coeffs = runge_coefficients<ValueType, 4>>
-    class runge_kutta {};
+    template<size_t Order, typename ValueType, typename ArgumentType, typename Coeffs = runge_coefficients<ValueType, Order>>
+    class runge_kutta {
+
+    public:
+
+        static auto create() {
+            return std::bind(solve, std::placeholders::_1, std::placeholders::_2,
+                             std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, Coeffs());
+        }
+
+        static types::vector1d_t<ValueType> solve(const ArgumentType& a, const ArgumentType& b, const ValueType& y0,
+                                                  const size_t n, const std::function<ValueType(ArgumentType, ValueType)>& f,
+                                                  const Coeffs& coeffs) {
+            const auto d = (b - a) / (n - 1);
+            types::vector1d_t<ValueType> result(n, ValueType(0));
+            result[0] = y0;
+            types::array1d_t<ValueType, Order> k;
+            auto x = a;
+            for (size_t i = 1; i < n; ++i) {
+                for (size_t j = 0; j < Order; ++j) {
+                    auto buff = ValueType(0);
+                    for (size_t m = 0; m < j; ++m)
+                        buff += coeffs.get_a(j, m) * k[m];
+                    k[j] = f(x + d * coeffs.get_c(j), result[i - 1] + buff * d);
+                    result[i] += coeffs.get_b(j) * k[j];
+                }
+                result[i] *= d;
+                result[i] += result[i - 1];
+                x += d;
+            }
+            return result;
+        }
+
+    };
 
 }
