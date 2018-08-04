@@ -198,4 +198,48 @@ namespace isope {
 
     };
 
+    template<size_t Order, typename ValueType, typename ArgumentType, typename Coeffs = runge_coefficients<ValueType, Order>>
+    class lazy_runge_kutta {
+
+    public:
+
+        lazy_runge_kutta(const ArgumentType& a, const ArgumentType& b, const ValueType& y0,
+                         const size_t n, const std::function<ValueType(ArgumentType, ValueType, size_t)>& f)
+                         : _d((b - a) / (n - 1)), _lastValue(y0), _lastArgument(a), _f(f), _max(n) {}
+
+        ValueType operator()(types::array1d_t<ValueType, Order>& k) {
+            if (!*this) return ValueType(0);
+            ++_current;
+            auto result = ValueType(0);
+            for (size_t i = 0; i < Order; ++i) {
+                auto buff = ValueType(0);
+                for (size_t j = 0; j < i; ++j)
+                    buff += _coeffs.get_a(i, j) * k[j];
+                result += _coeffs.get_b(i) * (k[i] = _f(_lastArgument + _d * _coeffs.get_c(i), _lastValue + buff * _d, i));
+            }
+            _lastArgument += _d;
+            return _lastValue += result * _d;
+        }
+
+        ValueType operator()() {
+            types::array1d_t<ValueType, Order> k;
+            return (*this)(k);
+        }
+
+        operator bool() const {
+            return _max > _current;
+        }
+
+    private:
+
+        const ArgumentType _d;
+        ArgumentType _lastArgument;
+        ValueType _lastValue;
+        const std::function<ValueType(ArgumentType, ValueType, size_t)> _f;
+        const Coeffs _coeffs;
+        const size_t _max;
+        size_t _current = 1;
+
+    };
+
 }
