@@ -222,7 +222,7 @@ namespace isope {
         }
 
         ValueType operator()() {
-            types::array1d_t<ValueType, Order> k;
+            static types::array1d_t<ValueType, Order> k;
             return (*this)(k);
         }
 
@@ -240,6 +240,52 @@ namespace isope {
         const size_t _max;
         size_t _current = 1;
 
+    };
+
+    template<size_t Order, typename ValueType, typename ArgumentType, typename Coeffs = runge_coefficients<ValueType, Order>>
+    class lazy_2d_runge_kutta {
+
+    public:
+
+        lazy_2d_runge_kutta(const ArgumentType& a, const ArgumentType& b,
+                const types::vector1d_t<ArgumentType>& x0, const types::vector1d_t<ValueType>& y0,
+                const size_t n, const std::function<ValueType(ArgumentType, ArgumentType, ValueType, size_t)>& f)
+                : _d((b - a) / (n - 1)), _lastValue(y0), _args(x0), _lastArgument(a), _f(f), _max(n) {}
+
+        types::vector1d_t<ValueType> operator()(types::vector1d_t<types::array1d_t<ValueType, Order>>& k) {
+            if (!*this) return types::vector1d_t<ValueType>(_lastValue.size(), 0);
+            ++_current;
+            for (size_t m = 0; m < _lastValue.size(); ++m) {
+                auto lv = _lastValue[m];
+                for (size_t i = 0; i < Order; ++i) {
+                    auto buff = ValueType(0);
+                    for (size_t j = 0; j < i; ++j)
+                        buff += _coeffs.get_a(i, j) * k[m][j];
+                    _lastValue[m] += _coeffs.get_b(i) * (k[m][i] = _f(_args[m], _lastArgument + _d * _coeffs.get_c(i), lv + buff * _d, i)) * _d;
+                }
+            }
+            _lastArgument += _d;
+            return _lastValue;
+        }
+
+        types::vector1d_t<ValueType> operator()() {
+            static types::vector1d_t<types::array1d_t<ValueType, Order>> k(_lastValue.size());
+            return (*this)(k);
+        }
+
+        operator bool() const {
+            return _max > _current;
+        }
+
+    private:
+
+        const ArgumentType _d;
+        ArgumentType _lastArgument;
+        types::vector1d_t<ValueType> _lastValue, _args;
+        const std::function<ValueType(ArgumentType, ArgumentType, ValueType, size_t)> _f;
+        const Coeffs _coeffs;
+        const size_t _max;
+        size_t _current = 1;
     };
 
 }
